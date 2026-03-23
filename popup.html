@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<title>Rádio FM</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 320px;
+    background: #0a0a0a;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .top-bar { background: #E30613; height: 5px; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0px 18px;
+    border-bottom: 1px solid #181818;
+  }
+  .logo-img { height: 60px; width: auto; object-fit: contain; }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; letter-spacing: 2px; font-weight: 700;
+    color: #E30613; text-transform: uppercase;
+  }
+  .live-dot { width:7px;height:7px;border-radius:50%;background:#E30613;flex-shrink:0; }
+  .live-dot.pulse { animation: live-pulse 1.4s ease-in-out infinite; }
+  @keyframes live-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.65)} }
+  .live-badge.off { color:#333; }
+  .live-badge.off .live-dot { background:#282828;animation:none; }
+
+  .genre-bar {
+    background: #E30613;
+    padding: 5px 18px;
+    display: flex; align-items: center; gap: 8px;
+    min-height: 26px;
+  }
+  .genre-bar.hidden { display: none; }
+  .genre-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.5); flex-shrink: 0; }
+  .genre-text {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: rgba(255,255,255,0.9);
+    white-space: nowrap; overflow: hidden; flex: 1; min-width: 0;
+  }
+  .genre-text.scroll span {
+    display: inline-block; animation: marquee 10s linear infinite; padding-right: 40px;
+  }
+  .genre-time {
+    font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.6);
+    white-space: nowrap; flex-shrink: 0; margin-left: auto;
+  }
+
+  .now-section {
+    padding: 11px 18px;
+    background: #111;
+    border-bottom: 1px solid #181818;
+    min-height: 58px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .section-label {
+    font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: #ababab; font-weight: 600; margin-bottom: 4px;
+  }
+  .track-outer { overflow: hidden; position: relative; }
+  .track-outer::after {
+    content:''; position:absolute; right:0;top:0;bottom:0; width:28px;
+    background:linear-gradient(to right,transparent,#111); pointer-events:none;
+  }
+  .track-name { font-size:14px;font-weight:700;color:#fff;white-space:nowrap;line-height:1.3; }
+  .track-name.scroll span {
+    display:inline-block; animation:marquee 14s linear infinite; padding-right:60px;
+  }
+  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .track-idle { font-size:13px;color:#878787;font-style:italic; }
+
+  .loading { display:none;align-items:center;gap:5px;margin-top:5px; }
+  .loading.show { display:flex; }
+  .loading-count { color: #a3a3a3; font-weight: 700; }
+  .ld { width:5px;height:5px;border-radius:50%;background:#E30613;animation:ld 1.1s ease-in-out infinite; }
+  .ld:nth-child(2){animation-delay:.18s} .ld:nth-child(3){animation-delay:.36s}
+  @keyframes ld { 0%,80%,100%{opacity:.25;transform:scale(.7)} 40%{opacity:1;transform:scale(1)} }
+  .loading-txt { font-size:9px;color:#a3a3a3;letter-spacing:1.5px;margin-left:2px; }
+
+  .viz { display:flex;align-items:flex-start;justify-content:center;gap:3px;height:16px;padding:0 18px;margin-top:10px;opacity:0;transition:opacity .5s; }
+  .viz.on { opacity:1; }
+  .vbar { width:3px;background:#E30613;border-radius:1px;height:3px; }
+  .viz.on .vbar:nth-child(1){animation:vb .75s ease-in-out infinite alternate}
+  .viz.on .vbar:nth-child(2){animation:vb .55s ease-in-out .1s infinite alternate}
+  .viz.on .vbar:nth-child(3){animation:vb .90s ease-in-out .05s infinite alternate}
+  .viz.on .vbar:nth-child(4){animation:vb .65s ease-in-out .2s infinite alternate}
+  .viz.on .vbar:nth-child(5){animation:vb .80s ease-in-out .12s infinite alternate}
+  .viz.on .vbar:nth-child(6){animation:vb .60s ease-in-out .08s infinite alternate}
+  .viz.on .vbar:nth-child(7){animation:vb .95s ease-in-out .18s infinite alternate}
+  .viz.on .vbar:nth-child(8){animation:vb .70s ease-in-out .25s infinite alternate}
+  @keyframes vb { from{height:2px} to{height:14px} }
+
+  .controls { display:flex;align-items:center;justify-content:center;padding:16px 18px 12px; }
+  .btn-play {
+    width:50px;height:50px;border-radius:50%;border:none;
+    background:#E30613;color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s,transform .12s;
+    box-shadow:0 4px 22px rgba(227,6,19,.4);
+  }
+  .btn-play:hover { background:#ff1f2d; }
+  .btn-play:active { transform:scale(.91); }
+  .btn-play.playing {
+    background:#151515; border:2px solid #E30613;
+    animation:stop-ring 2.5s ease-in-out infinite;
+  }
+  @keyframes stop-ring {
+    0%,100%{box-shadow:0 0 0 0 rgba(227,6,19,.25)} 50%{box-shadow:0 0 0 9px rgba(227,6,19,0)}
+  }
+  .btn-play svg { width:26px;height:26px; }
+
+  .vol-section { padding:0 18px 14px;display:flex;align-items:center;gap:10px; }
+  .vol-icon { color:#333;flex-shrink:0;transition:color .2s;cursor:pointer; }
+  .vol-icon.active { color:#E30613; }
+  .vol-icon.muted { color:#555;opacity:.5; }
+  input[type=range] { -webkit-appearance:none;flex:1;height:3px;border-radius:2px;outline:none;cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+    background:#fff;border:2px solid #E30613;transition:transform .15s;cursor:pointer;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { transform:scale(1.25); }
+  .vol-section.muted input[type=range] { opacity: .35; }
+  .vol-section.muted input[type=range]::-webkit-slider-thumb { background:#555; border-color:#555; }
+  .vol-val { font-size:10px;color:#555;width:30px;text-align:right;font-weight:600; }
+
+  .playlist-section { border-top:1px solid #181818; }
+  .playlist-header {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 18px;cursor:pointer;background:#0d0d0d;
+    transition:background .15s;
+  }
+  .playlist-header:hover { background:#121212; }
+  .playlist-header-left { display:flex;align-items:center;gap:8px; }
+  .playlist-label { font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:#ababab;font-weight:600; }
+  .playlist-count {
+    font-size: 9px; color: #E30613; background: #e306134f;
+    border-radius: 8px; padding: 2px 6px 2px 4px;
+    font-weight: 700; border: 1px solid #2a0000; text-align: center;
+  }
+  .playlist-arrow { font-size:9px;color:#ababab;transition:transform .25s; }
+  .playlist-arrow.open { transform:rotate(180deg); }
+
+  .playlist-body { max-height:0;overflow:hidden;transition:max-height .35s ease; }
+  .playlist-body.open { max-height:240px;overflow-y:auto; }
+  .playlist-body::-webkit-scrollbar { width:3px; }
+  .playlist-body::-webkit-scrollbar-track { background:#0a0a0a; }
+  .playlist-body::-webkit-scrollbar-thumb { background:#E30613;border-radius:2px; }
+
+  .pl-row {
+    display:grid; grid-template-columns:40px 1fr;
+    gap:0 10px; align-items:center;
+    padding:7px 18px; border-bottom:1px solid #111;
+    transition:background .15s; position:relative;
+  }
+  .pl-row:last-child { border-bottom:none; }
+  .pl-row:hover { background:#111; }
+  .pl-row.current { background:#120000; }
+  .pl-row.current::before {
+    content:''; position:absolute; left:0;top:0;bottom:0;
+    width:3px; background:#E30613; border-radius:0 2px 2px 0;
+  }
+  .pl-left { display:flex;flex-direction:column;align-items:flex-start;gap:4px; }
+  .pl-time { font-size:10px;color:#6b6b6b;font-weight:700;font-variant-numeric:tabular-nums;line-height:1; }
+  .pl-row.current .pl-time { color:#E30613; }
+  .pl-mini-viz { display:flex;align-items:flex-end;gap:2px;height:9px; }
+  .pl-mini-viz span { width:2px;background:#E30613;border-radius:1px;height:2px; }
+  .pl-mini-viz.active span:nth-child(1){animation:pvb .7s ease-in-out infinite alternate}
+  .pl-mini-viz.active span:nth-child(2){animation:pvb .9s ease-in-out .15s infinite alternate}
+  .pl-mini-viz.active span:nth-child(3){animation:pvb .6s ease-in-out .3s infinite alternate}
+  @keyframes pvb { from{height:2px} to{height:9px} }
+  .pl-info { min-width:0; }
+  .pl-artist { font-size:11px;font-weight:700;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2; }
+  .pl-row.current .pl-artist { color:#fff; }
+  .pl-song { font-size:10px;color:#979797;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;line-height:1.2; }
+  .pl-row.current .pl-song { color:#E30613; }
+  .pl-empty { padding:12px 18px;font-size:11px;color:#2a2a2a;font-style:italic;text-align:center; }
+
+  .footer {
+    background:#0a0a0a;border-top:1px solid #141414;
+    padding:7px 18px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .footer-url { font-size:9px;letter-spacing:1px;color:#8f8f8f;text-transform:uppercase; }
+  .footer-qual { font-size:9px;color:#979797;letter-spacing:1px;font-weight:700; }
+  .footer-url a { color: #E30613;text-transform: none; }
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+
+<div class="header">
+  <img class="logo-img" src="icons/icon128.png" alt="Rádio FM">
+  <div class="live-badge off" id="liveBadge">
+    <div class="live-dot" id="liveDot"></div>
+    <span id="liveText">OFFLINE</span>
+  </div>
+</div>
+
+<div class="genre-bar hidden" id="genreBar">
+  <div class="genre-dot"></div>
+  <span class="genre-text" id="genreText"></span>
+  <span class="genre-time" id="genreTime"></span>
+</div>
+
+<div class="now-section">
+  <div class="section-label">▶ Práve hrá</div>
+  <div class="track-outer">
+    <div class="track-name" id="trackName">
+      <span class="track-idle">Stlač play</span>
+    </div>
+  </div>
+  <div class="loading" id="loadingEl">
+    <div class="ld"></div><div class="ld"></div><div class="ld"></div>
+    <span class="loading-txt">NAČÍTAVAM STREAM…</span>
+  </div>
+</div>
+
+<div class="viz" id="viz">
+  <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+  <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+  <div class="vbar"></div><div class="vbar"></div>
+</div>
+
+<div class="controls">
+  <button class="btn-play" id="playBtn">
+    <svg id="iconPlay" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="iconStop" viewBox="0 0 24 24" fill="#E30613" style="display:none">
+      <rect x="6" y="6" width="12" height="12" rx="1"/>
+    </svg>
+  </button>
+</div>
+
+<div class="vol-section">
+  <svg class="vol-icon" id="volIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path class="icon-sound" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+    <path class="icon-mute" style="display:none" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM19 6.41L17.59 5 14 8.59 10.41 5 9 6.41 12.59 10 9 13.59 10.41 15 14 11.41 17.59 15 19 13.59 15.41 10z"/>
+  </svg>
+  <input type="range" id="volSlider" min="0" max="100" value="80">
+  <span class="vol-val" id="volVal">80%</span>
+</div>
+
+<div class="playlist-section">
+  <div class="playlist-header" id="plToggle">
+    <div class="playlist-header-left">
+      <span class="playlist-label">Playlist · História</span>
+      <span class="playlist-count" id="plCount">—</span>
+    </div>
+    <span class="playlist-arrow" id="plArrow">▼</span>
+  </div>
+  <div class="playlist-body" id="plBody">
+    <div class="pl-empty">Zapni rádio pre načítanie playlistu…</div>
+  </div>
+</div>
+
+<div class="footer">
+  <span class="footer-url">Rádio_FM ❤ | <a target="_blank" href="https://fm.stvr.sk/playlist">Playlist_FM</a> ↪</span>
+  <span class="footer-qual" id="footerQual">—</span>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

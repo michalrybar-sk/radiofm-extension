@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Rádio FM Player",
+  "version": "3.0.0",
+  "description": "Prehrávač online streamu Rádio FM s názvom skladby",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    },
+    "default_title": "Rádio FM"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "offscreen",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://live.stvr.sk/*",
+    "https://icecast.stv.livebox.sk/*",
+    "https://fm.stvr.sk/*"
+  ]
+}
