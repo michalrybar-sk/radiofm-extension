@@ -1,6 +1,6 @@
 # Rádio FM Player
 
-<p align="center">
+<p align="left">
   <img src="icons/logo_full.png" alt="Rádio FM Player" height="80">
 </p>
 
