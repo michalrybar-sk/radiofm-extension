@@ -1,5 +1,9 @@
 # Rádio FM Player
 
+<p align="center">
+  <img src="icons/logo_full.png" alt="Rádio FM Player" height="80">
+</p>
+
 Rozšírenie pre prehliadač Opera a Chrome, ktoré ti umožňuje počúvať [Rádio FM](https://fm.stvr.sk) priamo z panela prehliadača.
 
 ## Funkcie
